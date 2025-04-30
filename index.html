@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Ganti Nama dalam File ZIP</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(145deg, #0f172a, #1e293b);
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 50px 20px 80px;
+      animation: fadeInBody 1s ease forwards;
+    }
+
+    h2 {
+      font-size: 2.2rem;
+      margin-bottom: 35px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: #38bdf8;
+      animation: slideDown 0.8s ease-out;
+    }
+
+    input[type="file"],
+    input[type="text"],
+    button {
+      width: 90%;
+      max-width: 450px;
+      padding: 14px 18px;
+      font-size: 16px;
+      margin: 12px 0;
+      border-radius: 12px;
+      border: none;
+      outline: none;
+      transition: all 0.4s ease;
+    }
+
+    input[type="file"],
+    input[type="text"] {
+      background: #334155;
+      color: #f8fafc;
+      box-shadow: inset 0 0 0 1px #475569;
+    }
+
+    input[type="text"]::placeholder {
+      color: #94a3b8;
+    }
+
+    button {
+      background: linear-gradient(to right, #38bdf8, #0ea5e9);
+      color: #0f172a;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(56, 189, 248, 0.4);
+      transform: translateY(0);
+    }
+
+    button:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 8px 18px rgba(56, 189, 248, 0.5);
+    }
+
+    footer {
+      width: 100%;
+      background: #1e293b;
+      padding: 20px;
+      position: fixed;
+      bottom: 0;
+      text-align: center;
+      font-size: 14px;
+      color: #94a3b8;
+      border-top: 1px solid #334155;
+      animation: slideUp 1s ease;
+    }
+
+    footer .footer-content {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      align-items: center;
+      font-weight: 500;
+    }
+
+    footer svg {
+      width: 18px;
+      height: 18px;
+      fill: #94a3b8;
+      transition: fill 0.3s;
+    }
+
+    footer svg:hover {
+      fill: #38bdf8;
+    }
+
+    @keyframes fadeInBody {
+      0% {opacity: 0; transform: translateY(15px);}
+      100% {opacity: 1; transform: translateY(0);}
+    }
+
+    @keyframes slideDown {
+      from {opacity: 0; transform: translateY(-25px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    @keyframes slideUp {
+      from {opacity: 0; transform: translateY(30px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+  </style>
+</head>
+<body>
+  <h2>Ganti Nama dalam File ZIP</h2>
+  <input type="file" id="zipInput" accept=".zip">
+  <input type="text" id="oldName" placeholder="Nama yang akan diganti (misal: kyami)">
+  <input type="text" id="newName" placeholder="Nama pengganti (misal: midoriya)">
+  <button onclick="renameZip()">Proses & Download ZIP Baru</button>
+
+  <footer>
+    <div class="footer-content">
+      <span>Dibuat dengan</span>
+      <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 
+      5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 
+      3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 
+      8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+      <span>oleh Yudha</span>
+    </div>
+  </footer>
+
+  <script>
+    async function renameZip() {
+      const fileInput = document.getElementById('zipInput');
+      const oldName = document.getElementById('oldName').value.trim();
+      const newName = document.getElementById('newName').value.trim();
+
+      if (!fileInput.files.length || !oldName || !newName) {
+        alert("Lengkapi semua input terlebih dahulu.");
+        return;
+      }
+
+      try {
+        const zip = new JSZip();
+        const file = fileInput.files[0];
+        const loaded = await zip.loadAsync(file);
+        const newZip = new JSZip();
+
+        for (const filename of Object.keys(loaded.files)) {
+          const fileObj = loaded.files[filename];
+          if (fileObj.dir) {
+            newZip.folder(filename.replaceAll(oldName, newName));
+          } else {
+            const content = await fileObj.async("string");
+            const updatedContent = content.replaceAll(oldName, newName);
+            const newFileName = filename.replaceAll(oldName, newName);
+            newZip.file(newFileName, updatedContent);
+          }
+        }
+
+        const result = await newZip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(result);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `renamed-${newName}.zip`;
+        a.click();
+      } catch (err) {
+        alert("Terjadi kesalahan saat memproses ZIP: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
